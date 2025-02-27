@@ -1,4 +1,4 @@
-use game_engine::{game_loop, input::Input, Game};
+use game_engine::{game_loop, input::Input, EngineEvent};
 use winit::keyboard::KeyCode;
 
 struct Test { id: i32}
@@ -9,7 +9,7 @@ impl Test{
     }
 }
 
-impl Game for Test
+impl EngineEvent for Test
 {
     fn update(&mut self, input: &Input) 
     { 

@@ -20,15 +20,15 @@ impl Input
     pub fn update_keys(&mut self, event: &WindowEvent)
     {
         if let WindowEvent::KeyboardInput 
-            { 
-                event: KeyEvent
-                {
-                    state,
-                    physical_key: PhysicalKey::Code(key),
-                    ..
-                },
+        { 
+            event: KeyEvent
+            {
+                state,
+                physical_key: PhysicalKey::Code(key),
                 ..
-            } = event
+            },
+            ..
+        } = event
         {
             match state
             {

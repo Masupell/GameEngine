@@ -205,7 +205,7 @@ pub async fn game_loop<T: EngineEvent + 'static>(mut game: Box<T>)
             }
             if window_id == state.window().id() => 
             {
-                input.update_keys(&event);
+                input.update_inputs(&event);
                 match event
                 {
                     WindowEvent::CloseRequested => control_flow.exit(),
@@ -248,6 +248,7 @@ pub async fn game_loop<T: EngineEvent + 'static>(mut game: Box<T>)
             {
                 game.update(&input);
                 state.window().request_redraw();
+                input.prev_update();
             }
             _ => {}
         }

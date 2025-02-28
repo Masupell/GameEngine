@@ -13,7 +13,7 @@ pub struct Input
 
 impl Input
 {
-    pub fn new() -> Self
+    pub(crate) fn new() -> Self
     {
         Self
         {
@@ -25,7 +25,7 @@ impl Input
         }
     }
 
-    pub fn update_inputs(&mut self, event: &WindowEvent)
+    pub(crate) fn update_inputs(&mut self, event: &WindowEvent)
     {
         if let WindowEvent::KeyboardInput 
             { 
@@ -65,7 +65,7 @@ impl Input
         }
     }
 
-    pub fn prev_update(&mut self)
+    pub(crate) fn prev_update(&mut self)
     {
         self.prev_keys_pressed = self.keys_pressed.clone();
         self.prev_mouse_pressed = self.mouse_pressed.clone();

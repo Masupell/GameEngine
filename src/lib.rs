@@ -16,6 +16,7 @@ pub struct State<'a>
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
     window: &'a Window,
+    render_pipeline: wgpu::RenderPipeline,
 }
 
 impl<'a> State<'a> 
@@ -71,6 +72,63 @@ impl<'a> State<'a>
             view_formats: vec![],
         };
 
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor
+        {
+            label: Some("Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+        });
+
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor
+        {
+            label: Some("Render Pipeline Layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor
+        {
+            label: Some("Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState 
+            {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[],
+                compilation_options: wgpu::PipelineCompilationOptions::default()
+            },
+            fragment: Some(wgpu::FragmentState
+            {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState
+                {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default()
+            }),
+            primitive: wgpu::PrimitiveState
+            {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState
+            {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false
+            },
+            multiview: None,
+            cache: None
+        });
+
         Self 
         {
             surface,
@@ -79,6 +137,7 @@ impl<'a> State<'a>
             config,
             size,
             window,
+            render_pipeline
         }
     }
 
@@ -118,7 +177,7 @@ impl<'a> State<'a>
         });
 
         {
-            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor 
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor 
             {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment 
@@ -141,6 +200,9 @@ impl<'a> State<'a>
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
+
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.draw(0..3, 0..1);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
@@ -152,7 +214,7 @@ impl<'a> State<'a>
 
 pub trait EngineEvent 
 {
-    fn update(&mut self, input: &Input);
+    fn update(&mut self, input: &Input, dt: f64);
     fn render(&self);
 }
 
@@ -193,6 +255,8 @@ pub async fn game_loop<T: EngineEvent + 'static>(mut game: Box<T>)
     let mut state = State::new(&window).await;
     let mut surface_configured = false;
     let mut input = Input::new();
+
+    let mut last_frame_time = std::time::Instant::now();
 
     event_loop.run(move | event, control_flow |
     {
@@ -246,9 +310,14 @@ pub async fn game_loop<T: EngineEvent + 'static>(mut game: Box<T>)
             }
             Event::AboutToWait =>
             {
-                game.update(&input);
+                let now = std::time::Instant::now();
+                let dt = (now - last_frame_time).as_secs_f64();
+                
+                game.update(&input, dt);
                 state.window().request_redraw();
                 input.prev_update();
+
+                last_frame_time = std::time::Instant::now();
             }
             _ => {}
         }

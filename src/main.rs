@@ -11,7 +11,7 @@ impl Test{
 
 impl EngineEvent for Test
 {
-    fn update(&mut self, input: &Input) 
+    fn update(&mut self, input: &Input, _dt: f64) 
     { 
         if input.is_key_hold(KeyCode::Space)
         {

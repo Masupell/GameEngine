@@ -6,6 +6,7 @@ use winit::{event::*,event_loop::EventLoop,window::{Window, WindowBuilder}};
 
 pub mod input;
 pub mod texture;
+pub mod render;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -294,54 +295,13 @@ impl<'a> State<'a>
 
         surface.configure(&device, &config);
 
+
+        // Texture
         let diffuse_bytes = include_bytes!("tree.png");
         let diffuse_texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "tree.png").unwrap();
 
-        let texture_bindgroup_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor
-        {
-            label: Some("Texture Bind Group Layout"),
-            entries: 
-            &[
-                wgpu::BindGroupLayoutEntry
-                {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture 
-                    {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry
-                {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None
-                }
-            ]
-        });
+        let (texture_bindgroup_layout, diffuse_bind_group) = diffuse_texture.bind_group(&device);
 
-        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor
-        {
-            label: Some("Diffuse Bind Group"),
-            layout: &texture_bindgroup_layout,
-            entries:
-            &[
-                wgpu::BindGroupEntry
-                {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry
-                {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
-                }
-            ]
-        });
 
 
         let camera = Camera
